@@ -6,10 +6,13 @@ function buildPrompt(freeText, meta) {
   const year = meta?.year || "";
   return (
     `선택 작품: ${title} (${artist}${year ? ", " + year : ""})\n` +
-    "아래 학생의 자유 관찰 초안을 바탕으로, 더 구체적이고 명확한 관찰을 할 수 있도록 3~6개의 맞춤 힌트를 제시하세요.\n" +
-    "- 색채/형태·질감/구도·소재·분위기 중 보완이 필요한 부분 위주\n" +
-    "- 비교/대조/근거 제시 유도\n" +
-    "- 짧고 실행 가능한 문장으로\n\n" +
+    "대상: 초등학교 4학년.\n" +
+    "역할: 그림(이미지)과 학생의 글을 비교하여, 학생이 바로 고칠 수 있는 가장 중요한 보완 2가지를 골라 주세요.\n" +
+    "규칙:\n" +
+    "- 두 문장만 출력 (각 1개의 조언).\n" +
+    "- 쉬운 한국어, 간단한 단문 (가능하면 20~30자).\n" +
+    "- 새로운 내용 추정/추가 금지. 이미지와 학생 글의 차이에만 근거.\n" +
+    "- 접두 문구, 번호, 따옴표, 불릿 없이 문장만.\n\n" +
     "[학생 자유 관찰 초안]\n" +
     `${(freeText || "").trim()}\n`
   );
@@ -60,8 +63,40 @@ async function generateHints({ apiKey, model, prompt, imageBase64, mimeType }) {
   const texts = parts
     .map((p) => (typeof p.text === "string" ? p.text : ""))
     .filter(Boolean);
-  const joined = texts.join("");
-  return joined?.trim() || "분석 결과를 생성하지 못했습니다. 입력을 다시 확인해 주세요.";
+  let joined = texts.join("").trim();
+
+  // 후처리: 마크다운/불릿 제거, 개행 정리
+  joined = joined
+    .replace(/^\s*(?:프롬프트\s*[:：-]\s*)/i, "")
+    .replace(/^`+|`+$/g, "")
+    .replace(/^"+|"+$/g, "")
+    .replace(/[\t]+/g, " ")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/[•·\-]\s*/g, "");
+
+  // 문장 분할(간단 휴리스틱)
+  function splitSentencesKorean(text) {
+    const result = [];
+    let cur = "";
+    for (const ch of text) {
+      cur += ch;
+      if (ch === "." || ch === "!" || ch === "?" || ch === "…") {
+        const trimmed = cur.trim();
+        if (trimmed) result.push(trimmed);
+        cur = "";
+      }
+    }
+    if (cur.trim()) result.push(cur.trim());
+    return result;
+  }
+
+  const sentences = splitSentencesKorean(joined)
+    .map((s) => s.replace(/\s{2,}/g, " ").trim())
+    .filter(Boolean);
+
+  // 두 문장만 유지. 없으면 전체를 하나로 간주.
+  const top2 = sentences.length ? sentences.slice(0, 2) : [joined];
+  return top2.join("\n");
 }
 
 module.exports = async (req, res) => {
