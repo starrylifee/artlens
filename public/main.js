@@ -462,7 +462,8 @@ async function autoGenerateImagePrompt() {
   } catch (e) {
     // 실패 시 로컬 정리 로직으로 폴백
     const body = refineUserPromptText(refinedOnly);
-    const fallback = body ? `다음 특징을 반영한 이미지: ${body}.` : "";
+    // 키워드들을 자연스러운 한 문장으로 단순 결합(새 정보 추가 금지)
+    const fallback = body ? `${body}를(을) 반영한 한 장면.` : "";
     el.promptPreview.textContent = fallback;
     const canExport = Boolean(fallback);
     el.copyPrompt.disabled = !canExport;

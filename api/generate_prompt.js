@@ -1,18 +1,12 @@
-function buildImagePromptInstruction(refinedText, meta) {
-  const title = meta?.title || "";
-  const artist = meta?.artist || "";
-  const header = title ? `선택 작품: ${title}${artist ? ` (${artist})` : ""}` : "";
+function buildImagePromptInstruction(refinedText, _meta) {
   const guide = [
-    header,
-    "아래 '수정 관찰(요약)' 텍스트만 사용하여, 새로운 내용을 추가하지 말고 이미지 생성 프롬프트 한 문장으로 정리하세요.",
+    "아래 '수정 관찰(요약)' 텍스트만 사용하여, 새로운 내용을 추가하지 말고 자연스러운 한국어 한 문장으로 정리하세요.",
     "- 핵심 명사/형용사/관계어를 보존하고, 의미가 겹치는 표현은 병합",
-    "- 불필요한 조사/어미/군더더기 제거, 문법적으로 자연스럽게",
-    "- 출력은 프롬프트 한 줄만, 접두/해설/따옴표/코드블록 금지",
-    "- 한국어로 출력",
+    "- 불필요한 조사/어미/군더더기 제거",
+    "- 제목/작품명/원작/느낀/반영 등의 단어 사용 금지",
+    "- 결과는 한 문장(마침표 하나)만 출력. 접두/해설/따옴표/코드블록 금지",
     "\n[수정 관찰(요약)]\n" + (refinedText || "").trim(),
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ].join("\n");
   return guide;
 }
 
