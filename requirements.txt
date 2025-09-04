@@ -1,4 +1,0 @@
-# Dependencies for Vercel Python Function: api/ai_hints.py
-requests>=2.31.0,<3.0.0
-google-genai>=0.6.0,<1.0.0
-
