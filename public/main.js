@@ -382,17 +382,49 @@ function ensureRefinedDefaultFromFree() {
   }
 }
 
+// 사용자 입력을 문장형 프롬프트로 정돈(첨언 없이 형식만 다듬기)
+function refineUserPromptText(raw) {
+  const text = (raw || "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  // 구분자 통일: 줄바꿈, 점, 불릿/구분 기호, 슬래시 등을 쉼표로 치환
+  let normalized = text
+    .replace(/[\n\r]+/g, ", ")
+    .replace(/[·•∙●]/g, ", ")
+    .replace(/[\/|\u2215]/g, ", ")
+    .replace(/\s*[,;]\s*/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/[, ]{2,}/g, ", ");
+
+  // 조각 분할 후 정리
+  const chunks = normalized
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  // 중복 제거(형태 보존)
+  const seen = new Set();
+  const uniq = [];
+  for (const c of chunks) {
+    const key = c.replace(/\s+/g, " ").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    uniq.push(c);
+  }
+
+  return uniq.join(", ");
+}
+
 // 사용자의 의견만 정리해 만드는 이미지 생성 프롬프트 자동 생성
 async function autoGenerateImagePrompt() {
   const a = state.selectedArtwork;
   if (!a) throw new Error("작품이 선택되지 않았습니다");
   const o = state.observation;
   const userCore = (o.freeRefined && o.freeRefined.trim()) || (o.free && o.free.trim()) || "";
-  const base = userCore
-    ? `${userCore} 한 모습 그려줘`
-    : `${a.title}에서 느낀 핵심 특징을 반영한 모습 그려줘`;
-  // 인공지능 첨언 없이, 사용자의 의견 중심으로만 구성
-  const finalPrompt = base;
+  const body = refineUserPromptText(userCore);
+  // 인공지능 첨언 없이, 사용자의 의견 중심으로만 구성(형식만 정돈)
+  const finalPrompt = body
+    ? `다음 특징을 반영한 이미지: ${body}.`
+    : `${a.title}에서 느낀 핵심 특징을 반영한 이미지.`;
   el.promptPreview.textContent = finalPrompt;
   const canExport = Boolean(finalPrompt && finalPrompt.trim());
   el.copyPrompt.disabled = !canExport;
