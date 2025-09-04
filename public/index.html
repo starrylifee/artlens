@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>미술 감상 · 관찰 · 프롬프트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <header class="border-b bg-white">
+      <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <img src="./images/logo.png" alt="상단 로고" class="h-8 w-auto" />
+          <h1 class="text-xl font-semibold">미술 감상 · 관찰 · 프롬프트</h1>
+        </div>
+        <a href="#" class="text-sm text-gray-500 hover:text-gray-700" id="helpLink">도움말</a>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-4 py-6 space-y-6">
+      <!-- 스텝퍼 -->
+      <ol class="flex items-center justify-between gap-2" id="stepper">
+        <li class="flex-1">
+          <div class="step-item step-active" data-step="1">
+            <span class="step-index">1</span>
+            <span class="step-label">작품 감상</span>
+          </div>
+        </li>
+        <li class="flex-1">
+          <div class="step-item" data-step="2">
+            <span class="step-index">2</span>
+            <span class="step-label">관찰 기록</span>
+          </div>
+        </li>
+        <li class="flex-1">
+          <div class="step-item" data-step="3">
+            <span class="step-index">3</span>
+            <span class="step-label">AI와 함께 고치기</span>
+          </div>
+        </li>
+        <li class="flex-1">
+          <div class="step-item" data-step="4">
+            <span class="step-index">4</span>
+            <span class="step-label">프롬프트 생성</span>
+          </div>
+        </li>
+      </ol>
+
+      <!-- 1단계: 작품 감상 -->
+      <section id="step-1" class="step-section">
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col md:flex-row gap-3 md:items-center">
+            <input id="searchInput" type="text" placeholder="제목/작가/태그 검색" class="w-full md:flex-1 rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <select id="tagFilter" class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">태그 전체</option>
+            </select>
+          </div>
+
+          <div id="artworksGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+
+          <div class="flex justify-end">
+            <button id="toStep2" class="btn-primary" onclick="window.__goStep2 && window.__goStep2()">관찰 단계로 이동</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2단계: 관찰 기록 -->
+      <section id="step-2" class="step-section hidden">
+        <div class="flex items-start gap-4 flex-col md:flex-row">
+          <div class="md:w-1/2 w-full space-y-4">
+            <div class="rounded-md border bg-white p-4">
+              <h3 class="font-semibold mb-2">선택한 작품</h3>
+              <div class="bg-gray-50 rounded flex items-center justify-center md:h-[70vh] h-[40vh]">
+                <img id="selectedArtworkLarge" alt="선택 작품" class="max-h-full max-w-full object-contain" />
+              </div>
+              <div id="selectedArtworkInfo" class="text-sm text-gray-600 mt-3">작품을 먼저 선택하세요.</div>
+            </div>
+          </div>
+
+          <form id="observationForm" class="md:w-1/2 w-full grid grid-cols-1 gap-4">
+            <div>
+              <label class="form-label">자유 관찰(요약)</label>
+              <textarea id="obs-free" class="form-textarea" rows="6" placeholder="자유롭게 떠오르는 관찰을 적어보세요"></textarea>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <button type="button" id="backTo1" class="btn-secondary" onclick="window.__goStep1 && window.__goStep1()">이전</button>
+                <button type="button" id="restoreDraft" class="btn-secondary">저장 불러오기</button>
+              </div>
+              <button type="button" id="toStep3" class="btn-primary" onclick="window.__goStep3 && window.__goStep3()">AI와 함께 고치기</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- 3단계: AI와 함께 고치기 -->
+      <section id="step-3" class="step-section hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- 왼쪽: 큰 작품 미리보기 -->
+          <div class="space-y-4">
+            <div class="rounded-md border bg-white p-4">
+              <h3 class="font-semibold mb-2">작품 미리보기</h3>
+              <div class="bg-gray-50 rounded flex items-center justify-center md:h-[70vh] h-[40vh]">
+                <img id="step3ArtworkLarge" alt="선택 작품" class="max-h-full max-w-full object-contain" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 오른쪽: 내 관찰/AI 힌트/수정 -->
+          <div class="space-y-4">
+            <div class="rounded-md border bg-white p-4">
+              <h3 class="font-semibold mb-2">내 관찰(요약)</h3>
+              <div id="freePreview" class="text-sm text-gray-800 whitespace-pre-wrap min-h-[3rem]"></div>
+            </div>
+
+            <div class="rounded-md border bg-white p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="font-semibold text-sm">AI 힌트(선택)</h4>
+                <div class="flex gap-2">
+                  <button type="button" id="getHints" class="btn-secondary">AI 힌트 받기</button>
+                  <button type="button" id="copyHints" class="btn-secondary" disabled>힌트 복사</button>
+                </div>
+              </div>
+              <div id="aiHints" class="text-sm text-gray-700 whitespace-pre-wrap min-h-[3rem]"></div>
+              <p class="text-xs text-gray-500 mt-2">이미지와 관찰 내용을 비교해 보완 포인트만 제안합니다.</p>
+            </div>
+
+            <div class="rounded-md border bg-white p-4">
+              <h3 class="font-semibold mb-2">수정 관찰(요약)</h3>
+              <textarea id="obs-free-refined" class="form-textarea" rows="6" placeholder="AI 힌트를 참고해 자유 관찰을 다듬어 보세요"></textarea>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <button type="button" id="backTo2" class="btn-secondary" onclick="window.__goStep2 && window.__goStep2()">이전</button>
+              <button type="button" id="toStep4" class="btn-primary" onclick="window.__goStep4 && window.__goStep4()">프롬프트 단계로 이동</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4단계: 프롬프트 생성 -->
+      <section id="step-4" class="step-section hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div class="rounded-md border bg-white p-4">
+              <h3 class="font-semibold mb-2">작품 미리보기</h3>
+              <div class="bg-gray-50 rounded flex items-center justify-center md:h-[70vh] h-[40vh]">
+                <img id="step4ArtworkLarge" alt="선택 작품" class="max-h-full max-w-full object-contain" />
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="rounded-md border bg-white p-4">
+              <h3 class="font-semibold mb-2">생성된 프롬프트</h3>
+              <pre id="promptPreview" class="whitespace-pre-wrap text-sm text-gray-800"></pre>
+              <div class="mt-4 flex gap-2">
+                <button id="copyPrompt" class="btn-primary" disabled>복사</button>
+                <button id="downloadPrompt" class="btn-secondary" disabled>.txt 다운로드</button>
+                <a id="goImageGen" class="btn-secondary" target="_blank" rel="noopener" href="https://port-0-image-gen-m9nyuugq54a2ded0.sel4.cloudtype.app/login">이미지 만들기</a>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">4단계(이미지 생성)는 외부 도구에서 진행하세요.</p>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <button type="button" id="backTo3" class="btn-secondary" onclick="window.__goStep3 && window.__goStep3()">이전</button>
+              <button type="button" id="resetAll" class="text-sm text-red-600 hover:underline">모두 초기화</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 작품 상세 모달 -->
+    <div id="artworkModal" class="fixed inset-0 hidden">
+      <div id="modalOverlay" class="absolute inset-0 bg-black/50"></div>
+      <div class="relative z-10 mx-auto mt-10 max-w-3xl bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="flex justify-between items-center px-4 py-3 border-b">
+          <h3 class="font-semibold" id="modalTitle">작품 상세</h3>
+          <button type="button" class="text-gray-500 hover:text-gray-700" id="closeModal" onclick="window.__closeArtworkModal && window.__closeArtworkModal()">닫기</button>
+        </div>
+        <div class="p-4 space-y-3">
+          <img id="modalImage" alt="artwork" class="w-full object-contain rounded cursor-pointer" onclick="window.__proceedFromModal && window.__proceedFromModal()" />
+          <div id="modalMeta" class="text-sm text-gray-700"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 토스트 -->
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden"></div>
+
+    <!-- 우하단 배경 워터마크 -->
+    <div class="bg-watermark" aria-hidden="true" style="background-image:url('./images/background.png')"></div>
+
+    <script src="./main.js"></script>
+  </body>
+  </html>
+
+

@@ -1,0 +1,40 @@
+[ 
+  {
+    "id": "mona-lisa",
+    "title": "Mona Lisa",
+    "artist": "Leonardo da Vinci",
+    "year": "1503",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg",
+    "tags": ["르네상스", "초상"],
+    "source": {"name": "Wikimedia Commons", "url": "https://commons.wikimedia.org/wiki/File:Mona_Lisa.jpg", "license": "Public domain"}
+  },
+  {
+    "id": "persistence-of-memory",
+    "title": "The Persistence of Memory",
+    "artist": "Salvador Dalí",
+    "year": "1931",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg",
+    "tags": ["초현실주의", "풍경", "상징"],
+    "source": {"name": "Wikipedia", "url": "https://en.wikipedia.org/wiki/The_Persistence_of_Memory", "license": "Fair use/Contextual thumbnail"}
+  },
+  {
+    "id": "the-scream",
+    "title": "The Scream",
+    "artist": "Edvard Munch",
+    "year": "1893",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f4/The_Scream.jpg",
+    "tags": ["표현주의", "인물", "감정"],
+    "source": {"name": "Wikimedia Commons", "url": "https://commons.wikimedia.org/wiki/File:The_Scream.jpg", "license": "Public domain"}
+  },
+  {
+    "id": "girl-with-pearl-earring",
+    "title": "Girl with a Pearl Earring",
+    "artist": "Johannes Vermeer",
+    "year": "c. 1665",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Meisje_met_de_parel.jpg",
+    "tags": ["바로크", "초상", "인물"],
+    "source": {"name": "Wikimedia Commons", "url": "https://commons.wikimedia.org/wiki/File:Meisje_met_de_parel.jpg", "license": "Public domain"}
+  }
+]
+
+

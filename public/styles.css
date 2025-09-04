@@ -1,0 +1,40 @@
+.step-item { display:flex; align-items:center; gap:8px; border:1px solid #d1d5db; background:#fff; border-radius:6px; padding:8px 12px; font-size:14px; }
+.step-active { border-color:#6366f1; box-shadow:0 0 0 2px rgba(99,102,241,0.25); }
+.step-index { display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; border-radius:9999px; background:#4f46e5; color:#fff; font-size:12px; }
+.step-label { font-weight:500; }
+
+.step-section { border:1px solid #e5e7eb; background:#fff; border-radius:6px; padding:16px; }
+
+.btn-primary { display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#4f46e5; color:#fff; padding:8px 16px; }
+.btn-primary:hover { background:#4338ca; }
+.btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+
+.btn-secondary { display:inline-flex; align-items:center; justify-content:center; border-radius:6px; background:#fff; color:#374151; border:1px solid #d1d5db; padding:8px 16px; }
+.btn-secondary:hover { background:#f9fafb; }
+
+.form-label { display:block; font-size:14px; font-weight:500; color:#374151; margin-bottom:4px; }
+.form-textarea { width:100%; border:1px solid #d1d5db; border-radius:6px; padding:8px 12px; }
+.form-textarea:focus { outline:2px solid rgba(99,102,241,0.5); outline-offset:1px; }
+
+#toast { background:rgba(0,0,0,0.8); color:#fff; border-radius:6px; padding:6px 12px; font-size:14px; }
+
+/* 페이지 배경 워터마크 */
+.bg-watermark {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 25vw; /* 전체의 1/4 가량 */
+  max-width: 480px;
+  aspect-ratio: 4 / 3;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  opacity: 0.15; /* 살짝 연하게 */
+  pointer-events: none;
+  z-index: 0; /* 가장 뒤 */
+}
+
+/* 1단계 선택 강조 */
+.art-card.selected { border-color:#6366f1; box-shadow:0 0 0 2px rgba(99,102,241,0.35); }
+
+
