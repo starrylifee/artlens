@@ -29,9 +29,9 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: bottom right;
-  opacity: 0.15; /* 살짝 연하게 */
+  opacity: 0.25; /* 조금 더 진하게 */
   pointer-events: none;
-  z-index: 0; /* 가장 뒤 */
+  z-index: -1; /* 모든 콘텐츠 뒤로 */
 }
 
 /* 1단계 선택 강조 */
