@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/ai_hints.py": {
+      "runtime": "python3.11"
+    }
+  }
+}

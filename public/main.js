@@ -356,6 +356,47 @@ function handleDownload() {
   showToast("다운로드 시작");
 }
 
+// AI 힌트 서버 호출
+async function requestAiHints(artwork, observation) {
+  const payload = {
+    imageUrl: artwork.imageUrl,
+    title: artwork.title,
+    artist: artwork.artist,
+    year: artwork.year,
+    freeText: observation.free || "",
+  };
+  const res = await fetch("/api/ai_hints", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data || !data.hints || !(data.hints || "").trim()) {
+    throw new Error("Empty AI hints");
+  }
+  return String(data.hints).trim();
+}
+
+// 로컬 폴백 힌트 생성
+function buildLocalHints(artwork, observation) {
+  const o = observation;
+  const suggestions = [];
+  if (!o.free?.trim()) suggestions.push("자유 관찰 요약을 1–2문장으로 먼저 적어보세요.");
+  if (!o.color?.trim()) suggestions.push("색채에 대한 관찰이 비어 있어요. 주요 색과 대비를 적어보세요.");
+  if (!o.composition?.trim()) suggestions.push("구도/시점 언급이 없어요. 배치, 균형, 원근을 확인해보세요.");
+  if (!o.formTexture?.trim()) suggestions.push("형태/질감에 대해 더 적어보면 좋아요. 선, 붓질, 질감 등을 살펴보세요.");
+  if (!o.moodEmotion?.trim()) suggestions.push("분위기/감정 표현을 추가하면 더 풍부해져요.");
+  if (!o.motifSymbol?.trim()) suggestions.push("소재/상징 요소(사물, 배경의 의미)를 점검해보세요.");
+
+  const base = `선택 작품: ${artwork.title} (${artwork.artist})`;
+  const freeNudge = o.free?.trim()
+    ? "자유 관찰 요약은 좋습니다. 핵심어를 2–3개로 압축해보세요."
+    : "자유 관찰 요약을 1–2문장으로 먼저 적어보세요.";
+  const result = [base, freeNudge, ...suggestions].join("\n- ");
+  return "- " + result;
+}
+
 /* Init */
 async function init() {
   goToStep(1);
@@ -453,29 +494,31 @@ async function init() {
     });
   }
 
-  // AI 힌트(로컬 비교 로직)
+  // AI 힌트: 서버 호출 + 폴백
   if (el.getHints) {
-    el.getHints.addEventListener("click", () => {
+    el.getHints.addEventListener("click", async () => {
       if (!state.selectedArtwork) {
         showToast("작품을 먼저 선택하세요");
         return;
       }
-      const o = state.observation;
-      const suggestions = [];
-      if (!o.free?.trim()) suggestions.push("자유 관찰 요약을 1–2문장으로 먼저 적어보세요.");
-      if (!o.color?.trim()) suggestions.push("색채에 대한 관찰이 비어 있어요. 주요 색과 대비를 적어보세요.");
-      if (!o.composition?.trim()) suggestions.push("구도/시점 언급이 없어요. 배치, 균형, 원근을 확인해보세요.");
-      if (!o.formTexture?.trim()) suggestions.push("형태/질감에 대해 더 적어보면 좋아요. 선, 붓질, 질감 등을 살펴보세요.");
-      if (!o.moodEmotion?.trim()) suggestions.push("분위기/감정 표현을 추가하면 더 풍부해져요.");
-      if (!o.motifSymbol?.trim()) suggestions.push("소재/상징 요소(사물, 배경의 의미)를 점검해보세요.");
-
-      const base = `선택 작품: ${state.selectedArtwork.title} (${state.selectedArtwork.artist})`;
-      const freeNudge = o.free?.trim() ? "자유 관찰 요약은 좋습니다. 핵심어를 2–3개로 압축해보세요." : "자유 관찰 요약을 1–2문장으로 먼저 적어보세요.";
-      const result = [base, freeNudge, ...suggestions].join("\n- ");
-      el.aiHints.textContent = "- " + result;
-      el.copyHints.disabled = false;
-      // 힌트를 받은 후에야 4단계로 이동 가능하도록 게이트
-      if (el.toStep4) el.toStep4.disabled = false;
+      // 로딩 상태
+      el.getHints.disabled = true;
+      const prevLabel = el.getHints.textContent;
+      el.getHints.textContent = "분석 중...";
+      el.aiHints.textContent = "분석을 요청했습니다. 잠시만 기다려주세요...";
+      try {
+        const hints = await requestAiHints(state.selectedArtwork, state.observation);
+        el.aiHints.textContent = hints;
+        el.copyHints.disabled = false;
+        if (el.toStep4) el.toStep4.disabled = false;
+      } catch (e) {
+        const fallback = buildLocalHints(state.selectedArtwork, state.observation);
+        el.aiHints.textContent = fallback + "\n(참고: AI 서버 연결에 문제가 있어 로컬 힌트를 보여드립니다)";
+        el.copyHints.disabled = false;
+      } finally {
+        el.getHints.disabled = false;
+        el.getHints.textContent = prevLabel;
+      }
     });
   }
   if (el.copyHints) {
