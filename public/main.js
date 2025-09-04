@@ -424,7 +424,7 @@ async function autoGenerateImagePrompt() {
   // 인공지능 첨언 없이, 사용자의 의견 중심으로만 구성(형식만 정돈)
   const finalPrompt = body
     ? `다음 특징을 반영한 이미지: ${body}.`
-    : `${a.title}에서 느낀 핵심 특징을 반영한 이미지.`;
+    : `${a.title}에서 느낀 핵심 특징을 반영한 이미지.`;로고를를
   el.promptPreview.textContent = finalPrompt;
   const canExport = Boolean(finalPrompt && finalPrompt.trim());
   el.copyPrompt.disabled = !canExport;
@@ -530,6 +530,16 @@ async function init() {
   // Event bindings
   el.searchInput.addEventListener("input", filterArtworks);
   el.tagFilter.addEventListener("change", filterArtworks);
+
+  // 로고 클릭 시 첫 화면(1단계)로 이동
+  const logo = document.getElementById("homeLogo");
+  if (logo) {
+    logo.addEventListener("click", () => {
+      // 선택/입력 상태는 유지하면서 1단계 UI로만 이동
+      goToStep(1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
 
   // 안전망: 그리드 위임 바인딩(동적으로 생성되는 카드 클릭 감지)
   el.artworksGrid.addEventListener('click', (e) => {
