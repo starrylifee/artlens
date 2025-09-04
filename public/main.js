@@ -53,6 +53,8 @@ const el = {
   modalTitle: document.getElementById("modalTitle"),
   closeModal: document.getElementById("closeModal"),
   toast: document.getElementById("toast"),
+  aiProcessingModal: document.getElementById("aiProcessingModal"),
+  processingMessage: document.getElementById("processingMessage"),
 };
 
 /* Utilities */
@@ -80,6 +82,24 @@ function goToStep(step) {
   });
   // 버튼 게이트 최신화
   updateStep2Gate();
+  // 3단계 진입 시 수정 관찰 기본값을 내 관찰로 복사(비어있을 때만)
+  if (step === 3) {
+    try { ensureRefinedDefaultFromFree(); } catch (e) {}
+  }
+  // 4단계 진입 시 처리 모달 표시 및 프롬프트 자동 생성
+  if (step === 4) {
+    try { showAiProcessingModal(true, "인공지능이 사용자의 입력을 정리하고 있습니다."); } catch (e) {}
+    setTimeout(async () => {
+      try {
+        await autoGenerateImagePrompt();
+      } catch (e) {
+        // 실패해도 모달은 닫고 토스트만 알림
+        showToast("프롬프트 생성 실패: " + (e?.message || e));
+      } finally {
+        try { showAiProcessingModal(false); } catch (_) {}
+      }
+    }, 50);
+  }
 }
 
 function persist() {
@@ -107,7 +127,17 @@ function applyObservationToForm() {
   const free = document.getElementById("obs-free");
   if (free) free.value = state.observation.free || "";
   const freeRefined = document.getElementById("obs-free-refined");
-  if (freeRefined) freeRefined.value = state.observation.freeRefined || "";
+  if (freeRefined) {
+    // 3단계의 수정 관찰(요약)은 기본값으로 내 관찰(요약) 복사
+    // 사용자가 이미 입력한 값이 있으면 덮어쓰지 않음
+    const current = state.observation.freeRefined || "";
+    if (current && current.trim()) {
+      freeRefined.value = current;
+    } else {
+      freeRefined.value = state.observation.free || "";
+      state.observation.freeRefined = freeRefined.value;
+    }
+  }
   const c = document.getElementById("obs-color");
   if (c) c.value = state.observation.color || "";
   const ft = document.getElementById("obs-formTexture");
@@ -330,6 +360,43 @@ function refreshSummariesAndPrompt() {
   el.downloadPrompt.disabled = !canExport;
   const freePrev = document.getElementById("freePreview");
   if (freePrev) freePrev.textContent = state.observation.free || "";
+}
+
+function showAiProcessingModal(show, message) {
+  if (!el.aiProcessingModal) return;
+  if (typeof message === 'string' && el.processingMessage) {
+    el.processingMessage.textContent = message;
+  }
+  if (show) el.aiProcessingModal.classList.remove("hidden");
+  else el.aiProcessingModal.classList.add("hidden");
+}
+
+function ensureRefinedDefaultFromFree() {
+  const ta = document.getElementById("obs-free-refined");
+  if (!ta) return;
+  const current = (state.observation.freeRefined || "").trim();
+  if (!current) {
+    const base = state.observation.free || "";
+    ta.value = base;
+    state.observation.freeRefined = base;
+  }
+}
+
+// 사용자의 의견만 정리해 만드는 이미지 생성 프롬프트 자동 생성
+async function autoGenerateImagePrompt() {
+  const a = state.selectedArtwork;
+  if (!a) throw new Error("작품이 선택되지 않았습니다");
+  const o = state.observation;
+  const userCore = (o.freeRefined && o.freeRefined.trim()) || (o.free && o.free.trim()) || "";
+  const base = userCore
+    ? `${userCore} 한 모습 그려줘`
+    : `${a.title}에서 느낀 핵심 특징을 반영한 모습 그려줘`;
+  // 인공지능 첨언 없이, 사용자의 의견 중심으로만 구성
+  const finalPrompt = base;
+  el.promptPreview.textContent = finalPrompt;
+  const canExport = Boolean(finalPrompt && finalPrompt.trim());
+  el.copyPrompt.disabled = !canExport;
+  el.downloadPrompt.disabled = !canExport;
 }
 
 function handleCopy() {
