@@ -159,7 +159,7 @@ function renderArtworks(list) {
     card.dataset.id = a.id;
     card.innerHTML = `
       <div class="aspect-[4/3] bg-gray-100 overflow-hidden">
-        <img src="${a.imageUrl}" alt="${a.title}" class="h-full w-full object-cover group-hover:scale-[1.02] transition-transform" onerror="this.src='';" />
+        <img src="${a.imageUrl}" alt="${a.title}" referrerpolicy="no-referrer" loading="lazy" class="h-full w-full object-cover group-hover:scale-[1.02] transition-transform" onerror="this.src='/images/background.png';" />
       </div>
       <div class="p-2">
         <div class="text-sm font-medium">${a.title}</div>
@@ -204,7 +204,7 @@ function selectArtwork(a) {
     </div>
   `;
   const large = document.getElementById("selectedArtworkLarge");
-  if (large) large.src = a.imageUrl;
+  if (large) { large.src = a.imageUrl; try { large.referrerPolicy = 'no-referrer'; } catch (e) {} }
   persist();
 }
 
@@ -222,6 +222,7 @@ let modalKeyHandler = null;
 function openModal(a) {
   el.modalTitle.textContent = a.title;
   el.modalImage.src = a.imageUrl;
+  try { el.modalImage.referrerPolicy = 'no-referrer'; } catch (e) {}
   el.modalMeta.innerHTML = `
     <div class="text-sm">${a.artist} · ${a.year}</div>
     <div class="text-xs text-gray-500">태그: ${(a.tags||[]).join(', ') || '-'}</div>
@@ -361,10 +362,12 @@ async function init() {
   el.toStep2.disabled = true;
 
   restore();
-  el.presetSelect.value = state.preset;
+  if (el.presetSelect) {
+    el.presetSelect.value = state.preset;
+  }
 
   // Load artworks
-  const res = await fetch("./data/artworks.json");
+  const res = await fetch("/data/artworks.json");
   state.artworks = await res.json();
   populateTagFilter();
   state.filtered = state.artworks;
@@ -421,11 +424,13 @@ async function init() {
     });
   }
 
-  el.presetSelect.addEventListener("change", (e) => {
-    state.preset = e.target.value;
-    persist();
-    refreshSummariesAndPrompt();
-  });
+  if (el.presetSelect) {
+    el.presetSelect.addEventListener("change", (e) => {
+      state.preset = e.target.value;
+      persist();
+      refreshSummariesAndPrompt();
+    });
+  }
 
   el.copyPrompt.addEventListener("click", handleCopy);
   el.downloadPrompt.addEventListener("click", handleDownload);
