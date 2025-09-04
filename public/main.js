@@ -354,10 +354,22 @@ function refreshSummariesAndPrompt() {
   }
 
   const prompt = buildPrompt();
-  el.promptPreview.textContent = prompt;
-  const canExport = Boolean(prompt && ((state.observation.freeRefined && state.observation.freeRefined.trim()) || (state.observation.free && state.observation.free.trim())));
-  el.copyPrompt.disabled = !canExport;
-  el.downloadPrompt.disabled = !canExport;
+  // 4단계에서는 autoGenerateImagePrompt가 최종 프롬프트를 설정하므로 여기서 미리보기를 덮어쓰지 않음
+  const isStep4Visible = (function() {
+    const sec = document.getElementById("step-4");
+    return sec && !sec.classList.contains("hidden");
+  })();
+  if (!isStep4Visible) {
+    el.promptPreview.textContent = prompt;
+    const canExport = Boolean(
+      prompt && (
+        (state.observation.freeRefined && state.observation.freeRefined.trim()) ||
+        (state.observation.free && state.observation.free.trim())
+      )
+    );
+    el.copyPrompt.disabled = !canExport;
+    el.downloadPrompt.disabled = !canExport;
+  }
   const freePrev = document.getElementById("freePreview");
   if (freePrev) freePrev.textContent = state.observation.free || "";
 }
@@ -419,16 +431,44 @@ async function autoGenerateImagePrompt() {
   const a = state.selectedArtwork;
   if (!a) throw new Error("작품이 선택되지 않았습니다");
   const o = state.observation;
-  const userCore = (o.freeRefined && o.freeRefined.trim()) || (o.free && o.free.trim()) || "";
-  const body = refineUserPromptText(userCore);
-  // 인공지능 첨언 없이, 사용자의 의견 중심으로만 구성(형식만 정돈)
-  const finalPrompt = body
-    ? `다음 특징을 반영한 이미지: ${body}.`
-    : `${a.title}에서 느낀 핵심 특징을 반영한 이미지.`;로고를를
-  el.promptPreview.textContent = finalPrompt;
-  const canExport = Boolean(finalPrompt && finalPrompt.trim());
-  el.copyPrompt.disabled = !canExport;
-  el.downloadPrompt.disabled = !canExport;
+  // 3단계 '수정 관찰(요약)'만을 활용
+  const refinedOnly = (o.freeRefined || "").trim();
+  if (!refinedOnly) {
+    // 수정본이 없으면 내보내기 비활성화 및 안내
+    el.promptPreview.textContent = "";
+    el.copyPrompt.disabled = true;
+    el.downloadPrompt.disabled = true;
+    try { showToast("3단계에서 수정 관찰을 먼저 작성하세요"); } catch (_) {}
+    return;
+  }
+  // 서버에 Gemini 기반 프롬프트 생성을 요청(이미지 미포함)
+  try {
+    const resp = await fetch("/api/generate_prompt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        refinedText: refinedOnly,
+        title: a.title,
+        artist: a.artist,
+      }),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const promptText = (data && data.prompt) ? String(data.prompt).trim() : "";
+    el.promptPreview.textContent = promptText;
+    const canExport = Boolean(promptText);
+    el.copyPrompt.disabled = !canExport;
+    el.downloadPrompt.disabled = !canExport;
+  } catch (e) {
+    // 실패 시 로컬 정리 로직으로 폴백
+    const body = refineUserPromptText(refinedOnly);
+    const fallback = body ? `다음 특징을 반영한 이미지: ${body}.` : "";
+    el.promptPreview.textContent = fallback;
+    const canExport = Boolean(fallback);
+    el.copyPrompt.disabled = !canExport;
+    el.downloadPrompt.disabled = !canExport;
+    try { showToast("AI 프롬프트 생성 실패, 로컬 형식으로 대체"); } catch (_) {}
+  }
 }
 
 function handleCopy() {
