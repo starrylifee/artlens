@@ -1,20 +1,42 @@
 const { Buffer } = require("node:buffer");
 
-function buildPrompt(freeText, meta) {
+function buildPrompt({ freeText, meta, analysis, observation }) {
   const title = meta?.title || "";
   const artist = meta?.artist || "";
   const year = meta?.year || "";
+  const a = analysis || {};
+  const o = observation || {};
+  const preLines = [];
+  if (Array.isArray(a.key_features) && a.key_features.length) preLines.push(`핵심 특징: ${a.key_features.join(", ")}`);
+  if (a.color) preLines.push(`색채: ${a.color}`);
+  if (a.composition) preLines.push(`구도/시점: ${a.composition}`);
+  if (a.form_texture) preLines.push(`형태/질감: ${a.form_texture}`);
+  if (a.motif_symbol) preLines.push(`소재/상징: ${a.motif_symbol}`);
+  if (a.mood_emotion) preLines.push(`분위기/감정: ${a.mood_emotion}`);
+
+  const obsLines = [];
+  if (o.freeRefined || o.free) obsLines.push(`자유 관찰: ${(o.freeRefined || o.free || "").trim()}`);
+  if (o.color) obsLines.push(`색채: ${o.color}`);
+  if (o.composition) obsLines.push(`구도/시점: ${o.composition}`);
+  if (o.formTexture) obsLines.push(`형태/질감: ${o.formTexture}`);
+  if (o.motifSymbol) obsLines.push(`소재/상징: ${o.motifSymbol}`);
+  if (o.moodEmotion) obsLines.push(`분위기/감정: ${o.moodEmotion}`);
+
   return (
     `선택 작품: ${title} (${artist}${year ? ", " + year : ""})\n` +
     "대상: 초등학교 4학년.\n" +
-    "역할: 그림(이미지)과 학생의 글을 비교하여, 학생이 바로 고칠 수 있는 가장 중요한 보완 2가지를 '질문' 형태로 제시해 주세요.\n" +
+    "역할: 아래의 '작품 사전 분석'과 '학생 입력'을 비교하고, 제공된 이미지까지 참고하여 학생이 바로 보완하면 좋은 2가지를 '질문' 2문장으로 제시하세요.\n" +
     "규칙:\n" +
-    "- 두 개의 질문만 출력 (각 1문장).\n" +
-    "- 쉬운 한국어, 간단한 질문 (가능하면 20~30자).\n" +
-    "- 새로운 내용 추정/추가 금지. 이미지와 학생 글의 차이에만 근거.\n" +
+    "- 정확히 두 개의 질문만 출력 (각 1문장).\n" +
+    "- 쉬운 한국어, 20~30자 내외.\n" +
+    "- 새로운 정보/추정 금지: 이미지와 사전분석, 학생 입력의 차이에만 근거.\n" +
     "- 각 질문은 큰따옴표로 감싸고 물음표로 끝내기.\n" +
-    "- 번호/불릿/설명/접두 문구 없이 질문만, 각 질문은 줄바꿈으로 구분.\n\n" +
-    "[학생 자유 관찰 초안]\n" +
+    "- 번호/불릿/설명 없이 질문만, 줄바꿈으로 구분.\n\n" +
+    "[작품 사전 분석]\n" +
+    (preLines.join("\n") + "\n\n") +
+    "[학생 입력]\n" +
+    (obsLines.join("\n") + "\n\n") +
+    "[학생 자유 관찰 원문]\n" +
     `${(freeText || "").trim()}\n`
   );
 }
@@ -134,6 +156,8 @@ module.exports = async (req, res) => {
     const imageUrl = payload.imageUrl;
     const freeText = payload.freeText || "";
     const meta = { title: payload.title, artist: payload.artist, year: payload.year };
+    const analysis = payload.analysis || {};
+    const observation = payload.observation || {};
 
     if (!imageUrl) {
       res.status(400).json({ error: "imageUrl is required" });
@@ -147,7 +171,7 @@ module.exports = async (req, res) => {
     }
 
     const { base64, mimeType } = await fetchImageAsBase64(imageUrl);
-    const prompt = buildPrompt(freeText, meta);
+    const prompt = buildPrompt({ freeText, meta, analysis, observation });
     const model = "gemini-2.5-flash";
     const hints = await generateHints({
       apiKey,

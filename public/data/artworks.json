@@ -1,39 +1,75 @@
-[ 
+[
   {
-    "id": "mona-lisa",
-    "title": "Mona Lisa",
-    "artist": "Leonardo da Vinci",
-    "year": "1503",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg",
-    "tags": ["르네상스", "초상"],
-    "source": {"name": "Wikimedia Commons", "url": "https://commons.wikimedia.org/wiki/File:Mona_Lisa.jpg", "license": "Public domain"}
+    "id": "castle-of-the-pyrenees",
+    "title": "피레네의 성",
+    "artist": "René Magritte",
+    "year": "1959",
+    "imageUrl": "./images/artworks/castle-of-the-pyrenees.jpg",
+    "tags": ["초현실주의", "상징", "바위"],
+    "source": { "name": "사용자 업로드", "url": "#", "license": "로컬" }
+  },
+  {
+    "id": "the-angelus",
+    "title": "만종",
+    "artist": "Jean-François Millet",
+    "year": "1857–1859",
+    "imageUrl": "./images/artworks/the-angelus.jpg",
+    "tags": ["사실주의", "농촌", "인물"],
+    "source": { "name": "사용자 업로드", "url": "#", "license": "로컬" }
   },
   {
     "id": "persistence-of-memory",
-    "title": "The Persistence of Memory",
+    "title": "기억의 지속",
     "artist": "Salvador Dalí",
     "year": "1931",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg",
+    "imageUrl": "./images/artworks/persistence-of-memory.jpg",
     "tags": ["초현실주의", "풍경", "상징"],
-    "source": {"name": "Wikipedia", "url": "https://en.wikipedia.org/wiki/The_Persistence_of_Memory", "license": "Fair use/Contextual thumbnail"}
+    "source": { "name": "사용자 업로드", "url": "#", "license": "로컬" }
   },
   {
-    "id": "the-scream",
-    "title": "The Scream",
-    "artist": "Edvard Munch",
-    "year": "1893",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f4/The_Scream.jpg",
-    "tags": ["표현주의", "인물", "감정"],
-    "source": {"name": "Wikimedia Commons", "url": "https://commons.wikimedia.org/wiki/File:The_Scream.jpg", "license": "Public domain"}
+    "id": "pajeokdo-kim-deuk-sin",
+    "title": "파적도",
+    "artist": "김득신",
+    "year": "18세기 말",
+    "imageUrl": "./images/artworks/pajeokdo-kim-deuk-sin.jpg",
+    "tags": ["풍속화", "조선", "일상"],
+    "source": { "name": "사용자 업로드", "url": "#", "license": "로컬" }
+  },
+  {
+    "id": "starry-night",
+    "title": "별이 빛나는 밤",
+    "artist": "Vincent van Gogh",
+    "year": "1889",
+    "imageUrl": "./images/artworks/starry-night.jpg",
+    "tags": ["후기인상주의", "풍경", "밤"],
+    "source": { "name": "사용자 업로드", "url": "#", "license": "로컬" }
   },
   {
     "id": "girl-with-pearl-earring",
-    "title": "Girl with a Pearl Earring",
+    "title": "진주귀걸이 소녀",
     "artist": "Johannes Vermeer",
     "year": "c. 1665",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Meisje_met_de_parel.jpg",
+    "imageUrl": "./images/artworks/girl-with-pearl-earring.jpg",
     "tags": ["바로크", "초상", "인물"],
-    "source": {"name": "Wikimedia Commons", "url": "https://commons.wikimedia.org/wiki/File:Meisje_met_de_parel.jpg", "license": "Public domain"}
+    "source": { "name": "사용자 업로드", "url": "#", "license": "로컬" }
+  },
+  {
+    "id": "sehando-kim-jeong-hui",
+    "title": "세한도",
+    "artist": "김정희",
+    "year": "1844",
+    "imageUrl": "./images/artworks/sehando-kim-jeong-hui.jpg",
+    "tags": ["문인화", "조선", "수묵"],
+    "source": { "name": "사용자 업로드", "url": "#", "license": "로컬" }
+  },
+  {
+    "id": "i-and-the-village",
+    "title": "나와 마을",
+    "artist": "Marc Chagall",
+    "year": "1911",
+    "imageUrl": "./images/artworks/i-and-the-village.jpg",
+    "tags": ["표현주의", "상징", "인물"],
+    "source": { "name": "사용자 업로드", "url": "#", "license": "로컬" }
   }
 ]
 

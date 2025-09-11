@@ -3,6 +3,7 @@ const state = {
   artworks: [],
   filtered: [],
   selectedArtwork: null,
+  analysesById: {},
   observation: {
     free: "",
     freeRefined: "",
@@ -189,7 +190,7 @@ function renderArtworks(list) {
     card.dataset.id = a.id;
     card.innerHTML = `
       <div class="aspect-[4/3] bg-gray-100 overflow-hidden">
-        <img src="${a.imageUrl}" alt="${a.title}" referrerpolicy="no-referrer" loading="lazy" class="h-full w-full object-cover group-hover:scale-[1.02] transition-transform" onerror="this.src='/images/background.png';" />
+        <img src="${a.imageUrl}" alt="${a.title}" referrerpolicy="no-referrer" loading="lazy" class="h-full w-full object-cover group-hover:scale-[1.02] transition-transform" onerror="this.src='./images/background.png';" />
       </div>
       <div class="p-2">
         <div class="text-sm font-medium">${a.title}</div>
@@ -498,12 +499,32 @@ function handleDownload() {
 
 // AI 힌트 서버 호출
 async function requestAiHints(artwork, observation) {
+  // 서버 함수가 절대 URL만 처리 가능하므로 변환
+  const absoluteImageUrl = (function(u){
+    try {
+      if (!u) return "";
+      if (/^https?:\/\//i.test(u)) return u;
+      return new URL(u, window.location.origin).href;
+    } catch (_) { return u || ""; }
+  })(artwork.imageUrl);
+
   const payload = {
-    imageUrl: artwork.imageUrl,
+    imageUrl: absoluteImageUrl,
     title: artwork.title,
     artist: artwork.artist,
     year: artwork.year,
     freeText: observation.free || "",
+    analysis: state.analysesById[artwork.id] || {},
+    observation: {
+      free: observation.free || "",
+      freeRefined: observation.freeRefined || "",
+      color: observation.color || "",
+      formTexture: observation.formTexture || "",
+      composition: observation.composition || "",
+      motifSymbol: observation.motifSymbol || "",
+      moodEmotion: observation.moodEmotion || "",
+      notes: observation.notes || "",
+    },
   };
   const res = await fetch("/api/ai_hints", {
     method: "POST",
@@ -537,6 +558,76 @@ function buildLocalHints(artwork, observation) {
   return "- " + result;
 }
 
+// 사전 분석 기반 로컬 힌트 생성: 작품의 정리된 분석과 학생 입력 간의 간극을 질문으로 제시
+function buildHintsFromPreAnalysis(pre, observation) {
+  const o = observation || {};
+
+  const joinText = (...parts) => parts
+    .map((p) => (p || "").toString())
+    .join(" \n ")
+    .toLowerCase();
+
+  const studentText = joinText(
+    o.free, o.freeRefined, o.color, o.composition, o.formTexture, o.motifSymbol, o.moodEmotion, o.notes
+  );
+
+  const suggestions = [];
+  const addQ = (q) => { if (q && q.trim()) suggestions.push("- " + q.trim()); };
+  const short = (txt, max = 26) => {
+    const s = String(txt || "").trim();
+    if (!s) return "";
+    return s.length > max ? s.slice(0, max) + "…" : s;
+  };
+  const notCovered = (phrase) => {
+    const p = String(phrase || "").toLowerCase().trim();
+    if (!p) return false;
+    return !studentText.includes(p);
+  };
+
+  // 1) 핵심 특징 중 학생 서술에 드러나지 않은 것에 대한 보완 질문
+  if (Array.isArray(pre.key_features)) {
+    pre.key_features.forEach((feat) => {
+      if (notCovered(feat)) addQ(`핵심 특징 ‘${short(feat)}’에 대한 설명을 한 줄 추가해볼까요?`);
+    });
+  }
+
+  // 2) 범주별 보완(해당 항목이 비어 있거나, 핵심 단서가 드러나지 않은 경우)
+  if (!o.color?.trim() && pre.color) {
+    addQ(`색채(예: ${short(pre.color)})에 대한 관찰을 덧붙여 볼까요?`);
+  }
+  if (!o.composition?.trim() && pre.composition) {
+    addQ(`구도/시선 흐름(예: ${short(pre.composition)})을 어떻게 느꼈는지 적어볼까요?`);
+  }
+  if (!o.formTexture?.trim() && pre.form_texture) {
+    addQ(`형태/질감(예: ${short(pre.form_texture)})에서 인상적인 점을 추가해볼까요?`);
+  }
+  if (!o.motifSymbol?.trim() && pre.motif_symbol) {
+    addQ(`소재/상징(예: ${short(pre.motif_symbol)})의 의미를 한 줄로 정리해볼까요?`);
+  }
+  if (!o.moodEmotion?.trim() && pre.mood_emotion) {
+    addQ(`분위기/감정(예: ${short(pre.mood_emotion)})을 2–3개 키워드로 요약해볼까요?`);
+  }
+
+  // 3) 기본 자유 관찰이 비어 있으면 핵심 인상부터 유도
+  if (!o.free?.trim() && !o.freeRefined?.trim()) {
+    addQ("자유 관찰(요약)에서 작품의 첫인상/핵심 인상을 1–2문장으로 적어볼까요?");
+  }
+
+  // 4) 보완 질문이 너무 적으면 작품 고유 질문 일부 보강
+  if (suggestions.length < 4 && Array.isArray(pre.questions)) {
+    pre.questions.slice(0, 4 - suggestions.length).forEach((q) => addQ(q));
+  }
+
+  if (!suggestions.length) {
+    addQ("아주 좋아요. 핵심을 잘 짚었습니다. 마지막으로 한 문장으로 요약해볼까요?");
+  }
+
+  return [
+    "아래 보완 질문을 참고해 관찰을 더 구체화해 보세요:",
+    ...suggestions.slice(0, 8)
+  ].join("\n");
+}
+
 /* Init */
 async function init() {
   goToStep(1);
@@ -548,8 +639,22 @@ async function init() {
   }
 
   // Load artworks
-  const res = await fetch("/data/artworks.json");
+  const res = await fetch("./data/artworks.json");
   state.artworks = await res.json();
+
+  // Load pre-analyses (optional)
+  try {
+    const anaRes = await fetch("./data/analyses.json");
+    if (anaRes.ok) {
+      const analyses = await anaRes.json();
+      state.analysesById = (analyses || []).reduce((acc, item) => {
+        if (item && item.id) acc[item.id] = item;
+        return acc;
+      }, {});
+    }
+  } catch (_) {
+    state.analysesById = {};
+  }
   populateTagFilter();
   state.filtered = state.artworks;
   renderArtworks(state.filtered);
@@ -644,7 +749,7 @@ async function init() {
     });
   }
 
-  // AI 힌트: 서버 호출 + 폴백
+  // AI 힌트: 사전 분석 우선 + 서버 호출 + 폴백
   if (el.getHints) {
     el.getHints.addEventListener("click", async () => {
       if (!state.selectedArtwork) {
@@ -655,15 +760,26 @@ async function init() {
       el.getHints.disabled = true;
       const prevLabel = el.getHints.textContent;
       el.getHints.textContent = "분석 중...";
-      el.aiHints.textContent = "분석을 요청했습니다. 잠시만 기다려주세요...";
+      el.aiHints.textContent = "분석을 준비하고 있습니다...";
       try {
+        // 항상 서버 호출(사전분석/학생입력 포함). 서버가 2문항으로 정리
         const hints = await requestAiHints(state.selectedArtwork, state.observation);
         el.aiHints.textContent = hints;
         el.copyHints.disabled = false;
         if (el.toStep4) el.toStep4.disabled = false;
       } catch (e) {
-        const fallback = buildLocalHints(state.selectedArtwork, state.observation);
-        el.aiHints.textContent = fallback + "\n(참고: AI 서버 연결에 문제가 있어 로컬 힌트를 보여드립니다)";
+        // 폴백: 로컬 비교 힌트에서 상위 2개만 추려 출력
+        const pre = state.analysesById[state.selectedArtwork.id];
+        const fallbackFull = pre
+          ? buildHintsFromPreAnalysis(pre, state.observation)
+          : buildLocalHints(state.selectedArtwork, state.observation);
+        const two = (fallbackFull || "")
+          .split("\n")
+          .filter((l) => /^\s*-\s+/.test(l))
+          .slice(0, 2)
+          .join("\n");
+        const header = "아래 보완 질문 (로컬 폴백):";
+        el.aiHints.textContent = two ? `${header}\n${two}` : `${header}\n- 자유 관찰 핵심을 1–2문장으로 적어볼까요?\n- 색/구도 중 한 가지를 골라 한 줄로 보완해볼까요?`;
         el.copyHints.disabled = false;
       } finally {
         el.getHints.disabled = false;
