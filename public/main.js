@@ -39,8 +39,11 @@ const el = {
   observationForm: document.getElementById("observationForm"),
   presetSelect: document.getElementById("presetSelect"),
   promptPreview: document.getElementById("promptPreview"),
+  promptEditor: document.getElementById("promptEditor"),
   copyPrompt: document.getElementById("copyPrompt"),
   downloadPrompt: document.getElementById("downloadPrompt"),
+  copyObservation: document.getElementById("copyObservation"),
+  observationPreview4: document.getElementById("observationPreview4"),
   getHints: document.getElementById("getHints"),
   copyHints: document.getElementById("copyHints"),
   aiHints: document.getElementById("aiHints"),
@@ -93,6 +96,14 @@ function goToStep(step) {
     setTimeout(async () => {
       try {
         await autoGenerateImagePrompt();
+        // 생성된 내용을 에디터로 이동(편집 가능)
+        if (el.promptEditor && el.promptPreview) {
+          const txt = (el.promptPreview.textContent || "").trim();
+          el.promptEditor.value = txt;
+          // 프리뷰는 숨김 유지, 에디터 우선
+          el.copyPrompt.disabled = !Boolean(txt);
+          el.downloadPrompt.disabled = !Boolean(txt);
+        }
       } catch (e) {
         // 실패해도 모달은 닫고 토스트만 알림
         showToast("프롬프트 생성 실패: " + (e?.message || e));
@@ -373,6 +384,21 @@ function refreshSummariesAndPrompt() {
   }
   const freePrev = document.getElementById("freePreview");
   if (freePrev) freePrev.textContent = state.observation.free || "";
+  // 4단계 관찰값 프리뷰 채우기
+  if (el.observationPreview4) {
+    const o = state.observation;
+    const items = [];
+    if (o.free) items.push(`자유 관찰: ${o.free}`);
+    if (o.freeRefined) items.push(`수정 관찰: ${o.freeRefined}`);
+    if (o.color) items.push(`색채: ${o.color}`);
+    if (o.formTexture) items.push(`형태/질감: ${o.formTexture}`);
+    if (o.composition) items.push(`구도/시점: ${o.composition}`);
+    if (o.motifSymbol) items.push(`소재/상징: ${o.motifSymbol}`);
+    if (o.moodEmotion) items.push(`분위기/감정: ${o.moodEmotion}`);
+    if (o.notes) items.push(`메모: ${o.notes}`);
+    el.observationPreview4.textContent = items.join("\n");
+    if (el.copyObservation) el.copyObservation.disabled = !Boolean(items.length);
+  }
 }
 
 function showAiProcessingModal(show, message) {
@@ -474,13 +500,15 @@ async function autoGenerateImagePrompt() {
 }
 
 function handleCopy() {
-  const text = el.promptPreview.textContent || "";
+  const fromEditor = el.promptEditor ? el.promptEditor.value : "";
+  const text = (fromEditor && fromEditor.trim()) ? fromEditor : (el.promptPreview.textContent || "");
   if (!text.trim()) return;
   navigator.clipboard.writeText(text).then(() => showToast("복사되었습니다"));
 }
 
 function handleDownload() {
-  const text = el.promptPreview.textContent || "";
+  const fromEditor = el.promptEditor ? el.promptEditor.value : "";
+  const text = (fromEditor && fromEditor.trim()) ? fromEditor : (el.promptPreview.textContent || "");
   if (!text.trim()) return;
   const a = state.selectedArtwork;
   const dateStr = new Date().toISOString().slice(0, 10);
@@ -730,6 +758,25 @@ async function init() {
 
   el.copyPrompt.addEventListener("click", handleCopy);
   el.downloadPrompt.addEventListener("click", handleDownload);
+
+  // 4단계: 관찰값 복사 버튼
+  if (el.copyObservation && el.observationPreview4) {
+    el.copyObservation.addEventListener("click", () => {
+      const text = el.observationPreview4.textContent || "";
+      if (!text.trim()) return;
+      navigator.clipboard.writeText(text).then(() => showToast("관찰 결과가 복사되었습니다"));
+    });
+  }
+
+  // 4단계: 에디터 입력 변경 시 버튼 활성화 및 상태 동기화
+  if (el.promptEditor) {
+    el.promptEditor.addEventListener("input", () => {
+      const val = el.promptEditor.value || "";
+      const has = Boolean(val.trim());
+      el.copyPrompt.disabled = !has;
+      el.downloadPrompt.disabled = !has;
+    });
+  }
 
   // 2단계: 저장 불러오기(로컬스토리지 백업 복원)
   const restoreBtn = document.getElementById("restoreDraft");
