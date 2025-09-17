@@ -387,17 +387,10 @@ function refreshSummariesAndPrompt() {
   // 4단계 관찰값 프리뷰 채우기
   if (el.observationPreview4) {
     const o = state.observation;
-    const items = [];
-    if (o.free) items.push(`자유 관찰: ${o.free}`);
-    if (o.freeRefined) items.push(`수정 관찰: ${o.freeRefined}`);
-    if (o.color) items.push(`색채: ${o.color}`);
-    if (o.formTexture) items.push(`형태/질감: ${o.formTexture}`);
-    if (o.composition) items.push(`구도/시점: ${o.composition}`);
-    if (o.motifSymbol) items.push(`소재/상징: ${o.motifSymbol}`);
-    if (o.moodEmotion) items.push(`분위기/감정: ${o.moodEmotion}`);
-    if (o.notes) items.push(`메모: ${o.notes}`);
-    el.observationPreview4.textContent = items.join("\n");
-    if (el.copyObservation) el.copyObservation.disabled = !Boolean(items.length);
+    // 4단계 요구사항: '수정 관찰' 값만, 라벨 없이 출력
+    const refinedOnly = (o.freeRefined || "").trim();
+    el.observationPreview4.textContent = refinedOnly;
+    if (el.copyObservation) el.copyObservation.disabled = !Boolean(refinedOnly);
   }
 }
 
