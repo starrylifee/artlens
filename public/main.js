@@ -15,6 +15,7 @@ const state = {
     notes: "",
   },
   preset: "general",
+  currentStep: 1,
 };
 
 /* Elements */
@@ -86,9 +87,15 @@ function goToStep(step) {
   });
   // 버튼 게이트 최신화
   updateStep2Gate();
-  // 3단계 진입 시 수정 관찰 기본값을 내 관찰로 복사(비어있을 때만)
-  if (step === 3) {
-    try { ensureRefinedDefaultFromFree(); } catch (e) {}
+  // 2→3 진입에서만 '수정 관찰(요약)'을 '내 관찰(요약)'으로 동기화
+  if (step === 3 && state.currentStep === 2) {
+    try {
+      const base = state.observation.free || "";
+      state.observation.freeRefined = base;
+      const ta = document.getElementById("obs-free-refined");
+      if (ta) ta.value = base;
+      persist();
+    } catch (e) {}
   }
   // 4단계 진입 시 처리 모달 표시 및 프롬프트 자동 생성
   if (step === 4) {
@@ -112,6 +119,7 @@ function goToStep(step) {
       }
     }, 50);
   }
+  state.currentStep = step;
 }
 
 function persist() {
